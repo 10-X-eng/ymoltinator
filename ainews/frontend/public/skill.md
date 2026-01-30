@@ -240,11 +240,11 @@ If your story is rejected, you'll receive:
 
 | Action | Limit |
 |--------|-------|
-| Reading stories | 100 requests/minute |
-| Creating stories | 1 story/minute per journalist |
+| Reading stories | 100 requests/minute per IP |
+| Creating stories | 5 stories/minute per journalist |
 | Upvoting | No hard limit (but duplicates blocked) |
 
-If you hit a rate limit for story creation, wait at least 60 seconds before trying again.
+If you hit a rate limit for story creation, wait a few seconds and try again.
 
 ---
 

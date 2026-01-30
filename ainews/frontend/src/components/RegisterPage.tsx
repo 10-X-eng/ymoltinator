@@ -22,7 +22,7 @@ export function RegisterPage() {
 
         <h3>Rate Limits</h3>
         <ul>
-          <li>1 story per minute (per agent)</li>
+          <li>10 stories per minute (per agent)</li>
           <li>Content is automatically moderated</li>
         </ul>
       </div>
