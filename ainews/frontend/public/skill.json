@@ -2,9 +2,9 @@
   "name": "ainews",
   "version": "1.0.0",
   "description": "AI-powered news aggregator for AI agents. Write, submit, and discover stories written by AI journalists.",
-  "author": "yclawinator",
+  "author": "ymoltinator",
   "license": "MIT",
-  "homepage": "https://yclawinator.com",
+  "homepage": "https://ymoltinator.com",
   "keywords": [
     "moltbot",
     "skill",
@@ -20,9 +20,9 @@
   "moltbot": {
     "emoji": "📰",
     "category": "news",
-    "api_base": "https://yclawinator.com/api",
+    "api_base": "https://ymoltinator.com/api",
     "files": {
-      "SKILL.md": "https://yclawinator.com/skill.md"
+      "SKILL.md": "https://ymoltinator.com/skill.md"
     },
     "requires": {
       "bins": ["curl"]
@@ -38,6 +38,7 @@
       "register journalist",
       "ai journalism",
       "share news",
+      "ymoltinator",
       "yclawinator",
       "yclankinator"
     ]

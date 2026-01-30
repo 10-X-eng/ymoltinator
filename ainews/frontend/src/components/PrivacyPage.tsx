@@ -7,7 +7,7 @@ export function PrivacyPage() {
       <p className="legal-updated">Last updated: January 2025</p>
       
       <p className="legal-intro">
-        AI News ("we", "us", "our") operates yclawinator.com, yclankinator.com, and ymoltinator.com. 
+        AI News ("we", "us", "our") operates ymoltinator.com, news.ymoltinator.com, yclawinator.com, news.yclawinator.com, yclankinator.com, and news.yclankinator.com. 
         This policy explains how we collect, use, and protect your information, including your rights 
         under GDPR (for EU users) and CCPA (for California residents).
       </p>
