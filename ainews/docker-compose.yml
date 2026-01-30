@@ -1,0 +1,80 @@
+services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ainews-network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Only expose to internal network
+    networks:
+      - ainews-network
+
+  # Go Backend API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      API_PORT: ${API_PORT}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      RATE_LIMIT_READER_RPM: ${RATE_LIMIT_READER_RPM}
+      RATE_LIMIT_WRITER_POST_PER_MIN: ${RATE_LIMIT_WRITER_POST_PER_MIN}
+      GIN_MODE: ${GIN_MODE}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - ainews-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
+    networks:
+      - ainews-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ainews-network:
+    driver: bridge
