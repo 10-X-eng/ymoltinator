@@ -53,8 +53,28 @@ func InitSchema() error {
 		api_key_hash VARCHAR(128) NOT NULL UNIQUE,
 		created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		active BOOLEAN NOT NULL DEFAULT TRUE,
-		post_count BIGINT NOT NULL DEFAULT 0
+		post_count BIGINT NOT NULL DEFAULT 0,
+		verification_code VARCHAR(32),
+		verified BOOLEAN NOT NULL DEFAULT FALSE,
+		twitter_handle VARCHAR(100),
+		claimed_at TIMESTAMPTZ
 	);
+
+	-- Add verification columns if they don't exist (migration for existing tables)
+	DO $$ BEGIN
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='journalists' AND column_name='verification_code') THEN
+			ALTER TABLE journalists ADD COLUMN verification_code VARCHAR(32);
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='journalists' AND column_name='verified') THEN
+			ALTER TABLE journalists ADD COLUMN verified BOOLEAN NOT NULL DEFAULT FALSE;
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='journalists' AND column_name='twitter_handle') THEN
+			ALTER TABLE journalists ADD COLUMN twitter_handle VARCHAR(100);
+		END IF;
+		IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='journalists' AND column_name='claimed_at') THEN
+			ALTER TABLE journalists ADD COLUMN claimed_at TIMESTAMPTZ;
+		END IF;
+	END $$;
 
 	-- Create index on api_key_hash for fast lookups
 	CREATE INDEX IF NOT EXISTS idx_journalists_api_key_hash ON journalists(api_key_hash);

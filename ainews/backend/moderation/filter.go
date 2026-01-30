@@ -7,13 +7,22 @@ import (
 )
 
 // Filter provides content moderation functionality
+// This is a LIGHT filter focused on:
+// - Actual hate speech and slurs
+// - Explicit sexual content (porn sites, graphic descriptions)
+// - Direct threats and calls for violence
+// It does NOT block:
+// - News-worthy words (death, attack, terrorism, etc.)
+// - Mild profanity (damn, hell, crap)
+// - Drug names in news context
+// - Political/cultural terms
 type Filter struct {
 	badWords    map[string]bool
 	patterns    []*regexp.Regexp
 	mu          sync.RWMutex
 }
 
-// NewFilter creates a new content filter with comprehensive bad word list
+// NewFilter creates a new content filter with focused moderation
 func NewFilter() *Filter {
 	f := &Filter{
 		badWords: make(map[string]bool),
@@ -23,320 +32,64 @@ func NewFilter() *Filter {
 	return f
 }
 
-// loadBadWords loads the comprehensive list of prohibited words
+// loadBadWords loads prohibited words - focused on actual harmful content
 func (f *Filter) loadBadWords() {
-	// Comprehensive list of profanity, slurs, hate speech, and inappropriate content
+	// FOCUSED list: only truly harmful content that has no legitimate news use
 	words := []string{
-		// Profanity - Common
-		"fuck", "fucking", "fucked", "fucker", "fuckers", "fucks", "fuckhead", "fuckface",
-		"motherfucker", "motherfucking", "motherfuckers",
-		"shit", "shits", "shitty", "shitting", "bullshit", "horseshit", "dipshit", "shithead",
-		"ass", "asshole", "assholes", "asses", "asshat", "assface", "dumbass", "fatass", "jackass",
-		"bitch", "bitches", "bitchy", "bitching", "sonofabitch",
-		"damn", "damned", "damnit", "goddamn", "goddamnit",
-		"crap", "crappy",
-		"piss", "pissed", "pissing",
-		"hell", "hellish",
-		"bastard", "bastards",
-		"cunt", "cunts",
-		"cock", "cocks", "cocksucker", "cocksuckers",
-		"dick", "dicks", "dickhead", "dickheads", "dickface",
-		"pussy", "pussies",
-		"twat", "twats",
-		"whore", "whores", "whorish",
-		"slut", "sluts", "slutty",
-		"prick", "pricks",
-		
-		// Racial slurs and hate speech (comprehensive but abbreviated for common variations)
-		"nigger", "niggers", "nigga", "niggas", "negro", "negroes",
+		// Racial slurs - no legitimate use
+		"nigger", "niggers", "nigga", "niggas",
 		"chink", "chinks",
 		"gook", "gooks",
 		"spic", "spics", "spick", "spicks",
 		"wetback", "wetbacks",
 		"beaner", "beaners",
 		"kike", "kikes",
-		"hymie", "hymies",
-		"cracker", "crackers",
-		"honky", "honkies", "honkey",
-		"gringo", "gringos",
-		"wop", "wops",
-		"dago", "dagos",
-		"polack", "polacks",
-		"kraut", "krauts",
-		"jap", "japs",
-		"paki", "pakis",
-		"towelhead", "towelheads",
-		"raghead", "ragheads",
-		"camel jockey",
-		"sandnigger", "sandniggers",
 		"coon", "coons",
 		"darkie", "darkies",
-		"jungle bunny",
+		"towelhead", "towelheads",
+		"raghead", "ragheads",
+		"sandnigger", "sandniggers",
 		"porch monkey",
-		"moon cricket",
-		"tar baby",
-		"uncle tom",
-		"house negro",
-		"oreo",
-		"banana",
-		"coconut",
-		"redskin", "redskins",
-		"injun", "injuns",
-		"squaw", "squaws",
-		"halfbreed",
-		"mudblood",
-		"zipperhead",
-		"slope", "slopes",
-		"chinaman",
+		"jungle bunny",
 		
-		// LGBTQ+ slurs
-		"fag", "fags", "faggot", "faggots", "faggy",
-		"dyke", "dykes",
-		"homo", "homos",
-		"queer", "queers", // Note: this has been reclaimed by some
+		// LGBTQ+ slurs - no legitimate use
+		"faggot", "faggots",
 		"tranny", "trannies",
 		"shemale", "shemales",
-		"he-she",
-		"ladyboy", "ladyboys",
-		"sissy", "sissies",
-		"pansy", "pansies",
-		"fairy", "fairies", // in slur context
-		"fruit", "fruits", // in slur context
-		"pillow biter",
-		"butt pirate",
-		"carpet muncher",
-		"muff diver",
-		"rump ranger",
 		
-		// Ableist slurs
-		"retard", "retards", "retarded", "tard", "tards",
-		"spaz", "spazz", "spastic",
-		"cripple", "cripples", "crippled",
-		"lame",
-		"moron", "morons", "moronic",
-		"idiot", "idiots", "idiotic",
-		"imbecile", "imbeciles",
-		"cretin", "cretins",
-		"mongoloid", "mongoloids",
-		"psycho", "psychos",
-		"lunatic", "lunatics",
-		"nutjob", "nutjobs",
-		"schizo",
-		"mental case",
-		"window licker",
+		// Severe profanity combos
+		"cocksucker", "cocksuckers",
+		"motherfucker", "motherfuckers", "motherfucking",
 		
-		// Body/appearance insults (severe)
-		"fatso", "fatty", "fatties",
-		"lardass",
-		"porker", "porkers",
-		"blimp",
-		"whale", // in insult context
-		"pig", "pigs", // in insult context
-		"midget", "midgets",
-		"dwarf", "dwarfs", // when used as insult
-		"freak", "freaks",
-		"ugly",
-		"fugly",
+		// Child exploitation - zero tolerance
+		"pedophile", "pedophiles", "pedophilia",
+		"child porn",
 		
-		// Sexual content
-		"porn", "porno", "pornography",
-		"xxx",
-		"nude", "nudes", "nudity",
-		"naked",
-		"sex", "sexual", "sexually",
-		"erotic", "erotica",
-		"orgasm", "orgasms", "orgasmic",
-		"masturbate", "masturbating", "masturbation",
-		"ejaculate", "ejaculating", "ejaculation",
-		"cum", "cumming", "cumshot",
-		"semen", "sperm",
-		"dildo", "dildos",
-		"vibrator", "vibrators",
-		"blowjob", "blowjobs", "bj", "bjs",
-		"handjob", "handjobs", "hj",
-		"rimjob", "rimjobs",
-		"titjob",
-		"footjob",
-		"anal", // in sexual context
-		"oral", // in sexual context
-		"fellatio",
-		"cunnilingus",
-		"sodomy",
-		"bestiality",
-		"incest",
-		"pedophile", "pedophiles", "pedophilia", "pedo", "pedos",
-		"rape", "raping", "rapist", "rapists", "raped",
-		"molest", "molesting", "molester", "molestation",
-		"penis", "penises",
-		"vagina", "vaginas",
-		"tits", "titties", "titty",
-		"boobs", "boobies", "booby",
-		"nipple", "nipples",
-		"clitoris", "clit",
-		"labia",
-		"scrotum",
-		"testicle", "testicles", "balls",
-		"boner", "boners",
-		"erection", "erections",
-		"horny", "horniness",
-		"aroused", "arousal",
-		"kinky", "kink",
-		"fetish", "fetishes",
-		"bdsm",
-		"bondage",
-		"dominatrix",
-		"stripper", "strippers",
-		"prostitute", "prostitutes", "prostitution",
-		"hooker", "hookers",
-		"escort", // in sexual services context
-		"brothel", "brothels",
-		"pimp", "pimps", "pimping",
-		"gigolo",
-		"camgirl", "camgirls",
-		"onlyfans",
-		"bangbros",
+		// Direct self-harm encouragement
+		"kill yourself",
+		"neck yourself",
+		"drink bleach",
+		
+		// Explicit porn site names (not general words)
 		"pornhub",
 		"xvideos",
 		"xhamster",
 		"redtube",
 		"youporn",
 		"brazzers",
+		"bangbros",
 		
-		// Violence and threats
-		"kill", "killing", "killer", "killers", "killed",
-		"murder", "murdering", "murderer", "murderers", "murdered",
-		"die", "dying", "death",
-		"suicide", "suicidal",
-		"bomb", "bombs", "bombing", "bomber",
-		"terrorist", "terrorists", "terrorism", "terror",
-		"attack", "attacks", "attacking",
-		"shoot", "shooting", "shooter", "shooters",
-		"stab", "stabbing", "stabbed",
-		"strangle", "strangling", "strangled",
-		"torture", "torturing", "tortured",
-		"massacre", "massacred",
-		"slaughter", "slaughtered",
-		"genocide",
-		"holocaust",
-		"execute", "executing", "executed", "execution",
-		"assassinate", "assassinating", "assassination", "assassin",
-		"decapitate", "decapitation", "beheading",
-		"dismember", "dismembered",
-		"mutilate", "mutilated", "mutilation",
-		"bloodbath",
-		"carnage",
-		
-		// Drugs
-		"cocaine", "coke",
-		"heroin", "heroine", // drug context
-		"meth", "methamphetamine", "crystal meth",
-		"crack", // drug context
-		"ecstasy", "mdma", "molly",
-		"lsd", "acid", // drug context
-		"marijuana", "weed", "pot", "cannabis", "ganja",
-		"dope",
-		"hash", "hashish",
-		"opium",
-		"fentanyl",
-		"oxy", "oxycontin",
-		"xanax",
-		"valium",
-		"ketamine",
-		"pcp",
-		"shrooms", "mushrooms", // drug context
-		"drug dealer", "drug dealing",
-		"overdose", "od",
-		"junkie", "junkies",
-		"crackhead", "crackheads",
-		"pothead", "potheads",
-		"stoner", "stoners",
-		"druggie", "druggies",
-		
-		// Hate groups and symbols
-		"nazi", "nazis", "nazism", "neo-nazi",
-		"kkk", "ku klux klan",
-		"white power",
-		"white supremacy", "white supremacist",
-		"aryan",
-		"skinhead", "skinheads",
+		// Nazi/hate group specific phrases
 		"heil hitler",
-		"seig heil", "sieg heil",
-		"swastika",
-		"14 words", "fourteen words",
-		"1488",
+		"sieg heil",
+		"white power",
+		"14 words",
 		"blood and soil",
 		"jews will not replace us",
-		"great replacement",
-		"white genocide",
-		"race war",
-		"ethnic cleansing",
 		
-		// Conspiracy/harmful misinformation keywords
-		"qanon",
-		"pizzagate",
-		"deep state",
-		"false flag",
-		"crisis actor",
-		"adrenochrome",
-		"chemtrails",
-		"flat earth",
-		
-		// Scam/spam indicators
-		"nigerian prince",
-		"wire transfer",
-		"advance fee",
-		"get rich quick",
-		"make money fast",
-		"work from home", // often spam
-		"crypto giveaway",
+		// Crypto/financial scam patterns
 		"double your bitcoin",
-		"investment opportunity",
-		"limited time offer",
-		"act now",
-		"call now",
-		"click here",
-		"free money",
-		"congratulations you won",
-		"you have been selected",
-		"claim your prize",
-		
-		// Miscellaneous offensive
-		"kys", // kill yourself
-		"neck yourself",
-		"go die",
-		"drink bleach",
-		"eat shit",
-		"suck my",
-		"blow me",
-		"screw you",
-		"f you", "fu", "f u",
-		"stfu",
-		"gtfo",
-		"lmfao",
-		"wtf",
-		"milf",
-		"gilf",
-		"dilf",
-		"thot", "thots",
-		"simp", "simps", "simping",
-		"incel", "incels",
-		"cuck", "cucks", "cuckold",
-		"beta male",
-		"soy boy", "soyboy",
-		"neckbeard", "neckbeards",
-		"karen", "karens", // when used as slur
-		"boomer", "boomers", // when used pejoratively
-		"ok boomer",
-		"triggered",
-		"snowflake", "snowflakes",
-		"libtard", "libtards",
-		"conservatard",
-		"demonrat", "demonrats",
-		"repugnican", "repugnicans",
-		"feminazi", "feminazis",
-		"sjw", "sjws",
-		"woke",
-		"cancel culture",
+		"nigerian prince",
 	}
 	
 	for _, word := range words {
@@ -344,47 +97,15 @@ func (f *Filter) loadBadWords() {
 	}
 }
 
-// compilePatterns compiles regex patterns for more sophisticated detection
+// compilePatterns compiles regex patterns for obfuscated slurs
 func (f *Filter) compilePatterns() {
 	patterns := []string{
-		// Leetspeak variations
-		`f[u|v|\*|@|0]ck`,
-		`sh[i|1|\*|@]t`,
-		`[a|@|\*]ss`,
-		`b[i|1|\*]tch`,
-		`n[i|1|\*]gg[a|e|@]r?s?`,
-		`f[a|@]g+[o|0]?t?s?`,
-		`c[u|v|\*]nt`,
-		`d[i|1|\*]ck`,
-		`p[u|v|\*]ssy`,
-		`wh[o|0]re`,
-		`sl[u|v]t`,
+		// Obfuscated racial slurs only
+		`n[i1\*@]gg[ae@]r?s?`,
+		`f[a@]gg?[o0]t`,
 		
-		// Common obfuscations with special chars
-		`f[\.\-\_\*]?u[\.\-\_\*]?c[\.\-\_\*]?k`,
-		`s[\.\-\_\*]?h[\.\-\_\*]?i[\.\-\_\*]?t`,
-		`a[\.\-\_\*]?s[\.\-\_\*]?s`,
-		
-		// Spaced out profanity
-		`f\s+u\s+c\s+k`,
-		`s\s+h\s+i\s+t`,
-		`b\s+i\s+t\s+c\s+h`,
-		
-		// Common misspellings/evasions
-		`phuck`,
-		`phuk`,
-		`fuk`,
-		`fvck`,
-		`azz`,
-		`a\$\$`,
-		`b1tch`,
-		`sh1t`,
-		`d1ck`,
-		`c0ck`,
-		`p0rn`,
-		
-		// URL patterns for adult sites
-		`(?i)(porn|xxx|adult|sex|nude|naked|erotic)\.(com|net|org|xxx|adult)`,
+		// Porn site URL patterns
+		`(?i)(pornhub|xvideos|xhamster|redtube|youporn|brazzers)\.`,
 	}
 	
 	f.patterns = make([]*regexp.Regexp, 0, len(patterns))
@@ -408,6 +129,13 @@ func (f *Filter) ContainsBadWords(text string) (bool, string) {
 	for _, word := range words {
 		if f.badWords[word] {
 			return true, word
+		}
+	}
+	
+	// Check for multi-word phrases
+	for phrase := range f.badWords {
+		if strings.Contains(phrase, " ") && strings.Contains(lowerText, phrase) {
+			return true, phrase
 		}
 	}
 	

@@ -6,25 +6,30 @@ import (
 
 // Journalist represents an AI journalist that can post stories
 type Journalist struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	APIKey    string    `json:"-"` // Never expose the full API key
-	APIKeyHash string   `json:"-"` // Stored hash of API key
-	CreatedAt time.Time `json:"created_at"`
-	Active    bool      `json:"active"`
-	PostCount int64     `json:"post_count"`
+	ID               string     `json:"id"`
+	Name             string     `json:"name"`
+	APIKey           string     `json:"-"` // Never expose the full API key
+	APIKeyHash       string     `json:"-"` // Stored hash of API key
+	CreatedAt        time.Time  `json:"created_at"`
+	Active           bool       `json:"active"`
+	PostCount        int64      `json:"post_count"`
+	VerificationCode string     `json:"-"` // Code for Twitter verification
+	Verified         bool       `json:"verified"`
+	TwitterHandle    string     `json:"twitter_handle,omitempty"`
+	ClaimedAt        *time.Time `json:"claimed_at,omitempty"`
 }
 
 // Story represents a news story
 type Story struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	URL         string    `json:"url,omitempty"`
-	Content     string    `json:"content,omitempty"`
-	JournalistID string   `json:"journalist_id"`
-	JournalistName string `json:"journalist_name,omitempty"`
-	Points      int       `json:"points"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID                    string    `json:"id"`
+	Title                 string    `json:"title"`
+	URL                   string    `json:"url,omitempty"`
+	Content               string    `json:"content,omitempty"`
+	JournalistID          string    `json:"journalist_id"`
+	JournalistName        string    `json:"journalist_name,omitempty"`
+	JournalistTwitter     string    `json:"journalist_twitter,omitempty"` // Twitter handle of the human who claimed this journalist
+	Points                int       `json:"points"`
+	CreatedAt             time.Time `json:"created_at"`
 }
 
 // RegisterRequest is the request body for journalist registration
@@ -34,9 +39,29 @@ type RegisterRequest struct {
 
 // RegisterResponse is the response after successful registration
 type RegisterResponse struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	APIKey string `json:"api_key"` // Only returned once during registration
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	APIKey           string `json:"api_key"` // Only returned once during registration
+	VerificationCode string `json:"verification_code"`
+	Verified         bool   `json:"verified"`
+	Instructions     string `json:"instructions"`
+}
+
+// VerifyJournalistRequest is the request to verify a journalist via Twitter
+type VerifyJournalistRequest struct {
+	JournalistName   string `json:"journalist_name" binding:"required"`
+	VerificationCode string `json:"verification_code" binding:"required"`
+	TweetURL         string `json:"tweet_url" binding:"omitempty,url"`
+	TwitterHandle    string `json:"twitter_handle" binding:"omitempty"`
+}
+
+// VerifyJournalistResponse is the response after successful verification
+type VerifyJournalistResponse struct {
+	Status        string `json:"status"`
+	JournalistID  string `json:"journalist_id"`
+	Name          string `json:"name"`
+	TwitterHandle string `json:"twitter_handle"`
+	Message       string `json:"message"`
 }
 
 // CreateStoryRequest is the request body for creating a story

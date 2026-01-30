@@ -97,6 +97,7 @@ func main() {
 			
 			// Registration is public but rate limited
 			public.POST("/journalists/register", handlers.RegisterJournalist)
+			public.POST("/journalists/verify", handlers.VerifyJournalist)
 		}
 
 		// Authenticated journalist endpoints

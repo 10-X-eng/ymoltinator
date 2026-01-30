@@ -323,6 +323,18 @@ a:hover {
   font-size: 9pt;
 }
 
+.register-claim {
+  font-size: 0.9em;
+  margin: 12px 0;
+  padding: 12px;
+  background: #111;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  border: 1px solid #333;
+  color: #fff !important;
+}
+
 /* Success state */
 .register-success {
   padding: 20px;

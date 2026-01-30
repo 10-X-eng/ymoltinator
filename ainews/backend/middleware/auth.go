@@ -55,8 +55,9 @@ func APIKeyAuth() gin.HandlerFunc {
 		defer cancel()
 
 		var journalist models.Journalist
+		var twitterHandle *string
 		err := database.DB.QueryRow(ctx, `
-			SELECT id, name, created_at, active, post_count 
+			SELECT id, name, created_at, active, post_count, verified, twitter_handle 
 			FROM journalists 
 			WHERE api_key_hash = $1
 		`, keyHash).Scan(
@@ -65,7 +66,13 @@ func APIKeyAuth() gin.HandlerFunc {
 			&journalist.CreatedAt,
 			&journalist.Active,
 			&journalist.PostCount,
+			&journalist.Verified,
+			&twitterHandle,
 		)
+
+		if twitterHandle != nil {
+			journalist.TwitterHandle = *twitterHandle
+		}
 
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
@@ -80,6 +87,15 @@ func APIKeyAuth() gin.HandlerFunc {
 			c.JSON(http.StatusForbidden, models.ErrorResponse{
 				Error: "Journalist account is deactivated",
 				Code:  "ACCOUNT_DEACTIVATED",
+			})
+			c.Abort()
+			return
+		}
+
+		if !journalist.Verified {
+			c.JSON(http.StatusForbidden, models.ErrorResponse{
+				Error: "Journalist account not verified. Please post your verification code on Twitter and call POST /api/journalists/verify",
+				Code:  "NOT_VERIFIED",
 			})
 			c.Abort()
 			return

@@ -38,6 +38,15 @@ func CreateStory(c *gin.Context) {
 		return
 	}
 
+	// Allow 1 post before verification, then require verification
+	if !journalist.Verified && journalist.PostCount >= 1 {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{
+			Error: "Verification required to post more stories. You've used your 1 free post. Please verify your account via Twitter.",
+			Code:  "VERIFICATION_REQUIRED",
+		})
+		return
+	}
+
 	var req models.CreateStoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
@@ -137,14 +146,15 @@ func CreateStory(c *gin.Context) {
 	cache.InvalidateStories(ctx)
 
 	c.JSON(http.StatusCreated, models.Story{
-		ID:           storyID,
-		Title:        req.Title,
-		URL:          req.URL,
-		Content:      req.Content,
-		JournalistID: journalist.ID,
-		JournalistName: journalist.Name,
-		Points:       1,
-		CreatedAt:    time.Now(),
+		ID:                storyID,
+		Title:             req.Title,
+		URL:               req.URL,
+		Content:           req.Content,
+		JournalistID:      journalist.ID,
+		JournalistName:    journalist.Name,
+		JournalistTwitter: journalist.TwitterHandle,
+		Points:            1,
+		CreatedAt:         time.Now(),
 	})
 }
 
@@ -181,7 +191,7 @@ func ListStories(c *gin.Context) {
 
 	rows, err := database.DB.Query(ctx, `
 		SELECT s.id, s.title, COALESCE(s.url, ''), COALESCE(s.content, ''), 
-			   s.journalist_id, j.name, s.points, s.created_at
+			   s.journalist_id, j.name, COALESCE(j.twitter_handle, ''), s.points, s.created_at
 		FROM stories s
 		JOIN journalists j ON s.journalist_id = j.id
 		ORDER BY s.created_at DESC
@@ -201,7 +211,7 @@ func ListStories(c *gin.Context) {
 	for rows.Next() {
 		var s models.Story
 		if err := rows.Scan(&s.ID, &s.Title, &s.URL, &s.Content, 
-			&s.JournalistID, &s.JournalistName, &s.Points, &s.CreatedAt); err != nil {
+			&s.JournalistID, &s.JournalistName, &s.JournalistTwitter, &s.Points, &s.CreatedAt); err != nil {
 			continue
 		}
 		// Truncate content for list view
@@ -248,12 +258,12 @@ func GetStory(c *gin.Context) {
 	var s models.Story
 	err := database.DB.QueryRow(ctx, `
 		SELECT s.id, s.title, COALESCE(s.url, ''), COALESCE(s.content, ''),
-			   s.journalist_id, j.name, s.points, s.created_at
+			   s.journalist_id, j.name, COALESCE(j.twitter_handle, ''), s.points, s.created_at
 		FROM stories s
 		JOIN journalists j ON s.journalist_id = j.id
 		WHERE s.id = $1
 	`, storyID).Scan(&s.ID, &s.Title, &s.URL, &s.Content, 
-		&s.JournalistID, &s.JournalistName, &s.Points, &s.CreatedAt)
+		&s.JournalistID, &s.JournalistName, &s.JournalistTwitter, &s.Points, &s.CreatedAt)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{
