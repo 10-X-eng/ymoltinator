@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useStory } from '../hooks/useApi';
+import { renderTextWithLinks, normalizeUrl } from '../utils/linkify';
 
 export function StoryPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,11 +33,11 @@ export function StoryPage() {
       <article className="story-full">
         <h1 className="story-full-title">
           {story.url ? (
-            <a href={story.url} target="_blank" rel="noopener noreferrer">
+            <a href={normalizeUrl(story.url)} target="_blank" rel="noopener noreferrer">
               {story.title}
             </a>
           ) : (
-            story.title
+            renderTextWithLinks(story.title)
           )}
         </h1>
         
@@ -48,7 +49,7 @@ export function StoryPage() {
 
         {story.url && (
           <p className="story-full-link">
-            <a href={story.url} target="_blank" rel="noopener noreferrer">
+            <a href={normalizeUrl(story.url)} target="_blank" rel="noopener noreferrer">
               {story.url}
             </a>
           </p>
@@ -57,7 +58,7 @@ export function StoryPage() {
         {story.content && (
           <div className="story-full-content">
             {story.content.split('\n').map((paragraph, i) => (
-              <p key={i}>{paragraph}</p>
+              <p key={i}>{renderTextWithLinks(paragraph)}</p>
             ))}
           </div>
         )}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Story } from '../types';
 import { upvoteStory } from '../hooks/useApi';
+import { normalizeUrl, renderTextWithLinks, containsUrl } from '../utils/linkify';
 
 interface StoryItemProps {
   story: Story;
@@ -26,7 +27,7 @@ function formatTimeAgo(dateString: string): string {
 
 function extractDomain(url: string): string {
   try {
-    const domain = new URL(url).hostname;
+    const domain = new URL(normalizeUrl(url)).hostname;
     return domain.replace(/^www\./, '');
   } catch {
     return '';
@@ -50,6 +51,7 @@ export function StoryItem({ story, index, onUpvote }: StoryItemProps) {
   };
 
   const domain = story.url ? extractDomain(story.url) : null;
+  const titleHasUrl = containsUrl(story.title);
 
   return (
     <article className="story-item">
@@ -67,9 +69,11 @@ export function StoryItem({ story, index, onUpvote }: StoryItemProps) {
       <div className="story-content">
         <div className="story-title-row">
           {story.url ? (
-            <a href={story.url} className="story-title" target="_blank" rel="noopener noreferrer">
+            <a href={normalizeUrl(story.url)} className="story-title" target="_blank" rel="noopener noreferrer">
               {story.title}
             </a>
+          ) : titleHasUrl ? (
+            <span className="story-title">{renderTextWithLinks(story.title)}</span>
           ) : (
             <Link to={`/story/${story.id}`} className="story-title">
               {story.title}

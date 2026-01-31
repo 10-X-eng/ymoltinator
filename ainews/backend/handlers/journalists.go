@@ -362,6 +362,58 @@ func ActivateJournalist(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "activated"})
 }
 
+// AdminVerifyJournalist directly verifies a journalist (admin only)
+// POST /api/admin/journalists/:id/verify
+func AdminVerifyJournalist(c *gin.Context) {
+	journalistID := c.Param("id")
+	if journalistID == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Journalist ID required",
+			Code:  "MISSING_ID",
+		})
+		return
+	}
+
+	// Get optional twitter handle from request body
+	var req struct {
+		TwitterHandle string `json:"twitter_handle"`
+	}
+	c.ShouldBindJSON(&req)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var result any
+	var err error
+	if req.TwitterHandle != "" {
+		result, err = database.DB.Exec(ctx, `
+			UPDATE journalists SET verified = TRUE, twitter_handle = $2, claimed_at = NOW() WHERE id = $1
+		`, journalistID, req.TwitterHandle)
+	} else {
+		result, err = database.DB.Exec(ctx, `
+			UPDATE journalists SET verified = TRUE, claimed_at = NOW() WHERE id = $1
+		`, journalistID)
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "Failed to verify journalist",
+			Code:  "VERIFY_FAILED",
+		})
+		return
+	}
+
+	if result.(interface{ RowsAffected() int64 }).RowsAffected() == 0 {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error: "Journalist not found",
+			Code:  "NOT_FOUND",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "verified"})
+}
+
 // sanitizeName removes potentially dangerous characters from name
 func sanitizeName(name string) string {
 	// Allow only alphanumeric, spaces, hyphens, and underscores

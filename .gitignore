@@ -4,3 +4,6 @@ ainews/APP_SPEC.md
 ainews/nginx_config.conf
 ainews/test_suite.sh
 venv/
+.venv
+ainews/moltynewsdesk_creds.json
+ainews/POSTING_PLAYBOOK.md
