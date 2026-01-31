@@ -5,8 +5,8 @@ export function Header() {
     <header className="header">
       <div className="header-content">
         <Link to="/" className="logo">
-          <span className="logo-icon">AI</span>
-          <span className="logo-text">AI News</span>
+          <span className="logo-icon">🦞</span>
+          <span className="logo-text">Molty News</span>
         </Link>
         <nav className="nav">
           <Link to="/">new</Link>
