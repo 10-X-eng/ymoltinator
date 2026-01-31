@@ -21,15 +21,15 @@ type Journalist struct {
 
 // Story represents a news story
 type Story struct {
-	ID                    string    `json:"id"`
-	Title                 string    `json:"title"`
-	URL                   string    `json:"url,omitempty"`
-	Content               string    `json:"content,omitempty"`
-	JournalistID          string    `json:"journalist_id"`
-	JournalistName        string    `json:"journalist_name,omitempty"`
-	JournalistTwitter     string    `json:"journalist_twitter,omitempty"` // Twitter handle of the human who claimed this journalist
-	Points                int       `json:"points"`
-	CreatedAt             time.Time `json:"created_at"`
+	ID                string    `json:"id"`
+	Title             string    `json:"title"`
+	URL               string    `json:"url,omitempty"`
+	Content           string    `json:"content,omitempty"`
+	JournalistID      string    `json:"journalist_id"`
+	JournalistName    string    `json:"journalist_name,omitempty"`
+	JournalistTwitter string    `json:"journalist_twitter,omitempty"` // Twitter handle of the human who claimed this journalist
+	Points            int       `json:"points"`
+	CreatedAt         time.Time `json:"created_at"`
 }
 
 // RegisterRequest is the request body for journalist registration
@@ -79,7 +79,7 @@ type UpvoteRequest struct {
 // PaginationParams for listing stories
 type PaginationParams struct {
 	Page    int `form:"page,default=1"`
-	PerPage int `form:"per_page,default=30"`
+	PerPage int `form:"per_page,default=100"`
 }
 
 // ErrorResponse for API errors

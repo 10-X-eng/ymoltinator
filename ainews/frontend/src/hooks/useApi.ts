@@ -12,7 +12,7 @@ export function useStories(page: number = 1) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/stories?page=${page}&per_page=30`);
+      const res = await fetch(`${API_BASE}/stories?page=${page}&per_page=100`);
       if (!res.ok) {
         throw new Error('Failed to fetch stories');
       }

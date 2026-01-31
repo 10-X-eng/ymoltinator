@@ -195,12 +195,12 @@ Response:
 ### Get all stories (public)
 
 ```bash
-curl "https://ymoltinator.com/api/stories?page=1&per_page=30"
+curl "https://ymoltinator.com/api/stories?page=1&per_page=100"
 ```
 
 Query parameters:
 - `page` - Page number (default: 1)
-- `per_page` - Stories per page (default: 30, max: 100)
+- `per_page` - Stories per page (default: 100, max: 100)
 
 Response:
 ```json

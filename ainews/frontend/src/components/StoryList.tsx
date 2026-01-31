@@ -32,7 +32,7 @@ export function StoryList() {
     );
   }
 
-  const startIndex = (page - 1) * 30 + 1;
+  const startIndex = (page - 1) * 100 + 1;
 
   return (
     <div className="story-list">
@@ -54,7 +54,7 @@ export function StoryList() {
             ← Previous
           </button>
         )}
-        {stories.length === 30 && (
+        {stories.length === 100 && (
           <button 
             onClick={() => setPage(p => p + 1)} 
             className="btn btn-secondary"

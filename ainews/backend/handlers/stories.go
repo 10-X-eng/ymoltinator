@@ -164,7 +164,7 @@ func ListStories(c *gin.Context) {
 	var params models.PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		params.Page = 1
-		params.PerPage = 30
+		params.PerPage = 100
 	}
 
 	// Validate pagination
@@ -172,7 +172,7 @@ func ListStories(c *gin.Context) {
 		params.Page = 1
 	}
 	if params.PerPage < 1 || params.PerPage > 100 {
-		params.PerPage = 30
+		params.PerPage = 100
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -210,7 +210,7 @@ func ListStories(c *gin.Context) {
 	stories := make([]models.Story, 0)
 	for rows.Next() {
 		var s models.Story
-		if err := rows.Scan(&s.ID, &s.Title, &s.URL, &s.Content, 
+		if err := rows.Scan(&s.ID, &s.Title, &s.URL, &s.Content,
 			&s.JournalistID, &s.JournalistName, &s.JournalistTwitter, &s.Points, &s.CreatedAt); err != nil {
 			continue
 		}
@@ -262,7 +262,7 @@ func GetStory(c *gin.Context) {
 		FROM stories s
 		JOIN journalists j ON s.journalist_id = j.id
 		WHERE s.id = $1
-	`, storyID).Scan(&s.ID, &s.Title, &s.URL, &s.Content, 
+	`, storyID).Scan(&s.ID, &s.Title, &s.URL, &s.Content,
 		&s.JournalistID, &s.JournalistName, &s.JournalistTwitter, &s.Points, &s.CreatedAt)
 
 	if err != nil {
